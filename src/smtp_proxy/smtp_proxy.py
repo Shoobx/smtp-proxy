@@ -9,6 +9,7 @@ import signal
 
 from aiosmtpd.controller import Controller
 from aiosmtpd.smtp import Envelope
+from async_sendgrid import SendgridAPI
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 
@@ -44,7 +45,7 @@ class BaseHandler:
     def processPayload(self, mailArgs):
         raise NotImplementedError()
 
-    def sendMail(self, payload):
+    async def sendMail(self, payload):
         raise NotImplementedError()
 
     async def handle_DATA(self, server, session, envelope: Envelope):
@@ -76,10 +77,11 @@ class BaseHandler:
             while retries < MAX_RETRIES:
                 try:
                     log.debug(f"Sending payload via {className}")
-                    response = self.sendMail(payload)
+                    response = await self.sendMail(payload)
 
                     # TODO: Adapt to MS Graph response value + add wait until support
                     if response.status_code < 400:
+                        log.debug(f"Payload Sent!")
                         break
                     else:
                         raise Exception(f"[{response.status_code}: {response.body}]")
@@ -88,7 +90,7 @@ class BaseHandler:
                     errorMsg = f"Could not process your {className} message {mailArgs['subject']} to {mailArgs['rcpt_tos']}: {err}"
                     log.debug(err)
                     if retries == MAX_RETRIES:
-                        log.error(errorMsg)
+                        log.error(f"Retry limit reached, giving up on {errorMsg}!")
                     else:
                         log.warning(f"Retry attempt {retries}: {errorMsg}")
                         await asyncio.sleep(1 * retries)
@@ -97,7 +99,7 @@ class BaseHandler:
 
 class SendgridHandler(BaseHandler):
     def getClient(self, **kwargs):
-        return SendGridAPIClient(kwargs["sendgrid_api_key"])
+        return SendgridAPI(kwargs["sendgrid_api_key"])
 
     def processPayload(self, mailArgs):
         sg_msg = Mail(
@@ -108,8 +110,8 @@ class SendgridHandler(BaseHandler):
         )
         return sg_msg
 
-    def sendMail(self, payload):
-        return self.client.send(payload)
+    async def sendMail(self, payload):
+        return await self.client.send(payload)
 
 
 class MsGraphHandler(BaseHandler):
