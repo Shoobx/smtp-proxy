@@ -2,7 +2,7 @@ import pytest
 from smtp_proxy.smtp_proxy import SmtpProxyServer, SendgridHandler
 
 from unittest import mock
-from sendgrid import SendGridAPIClient
+from async_sendgrid import SendgridAPI
 from aiosmtpd.smtp import Envelope
 
 
@@ -20,7 +20,7 @@ def test_smtp_proxy_sendgrid_start():
     # Server is initialized with the correct handler, client, and number of tasks
     assert len(server.asyncTasks) == 5
     assert isinstance(server.controller.handler, SendgridHandler)
-    assert isinstance(server.handler.client, SendGridAPIClient)
+    assert isinstance(server.handler.client, SendgridAPI)
 
 
 @pytest.mark.asyncio
@@ -30,7 +30,7 @@ async def test_smtp_proxy_sendgrid_queue():
     )
 
     # mock the api request
-    sendMock = mock.Mock(return_value=mock.Mock(status_code=202))
+    sendMock = mock.AsyncMock(return_value=mock.Mock(status_code=202))
     server.handler.client.send = sendMock
 
     # Mock task init + adding Envelopes to the queue

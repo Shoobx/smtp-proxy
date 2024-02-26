@@ -18,6 +18,7 @@ dependencies = [
   #"azure-identity",
   #"msgrasph-sdk",
   "sendgrid",
+  "sendgrid-async",
 ]
 
 [project.optional-dependencies]
