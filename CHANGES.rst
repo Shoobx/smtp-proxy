@@ -1,4 +1,4 @@
-0.1.1 (unreleased)
+0.1.1 (2024-02-26)
 ------------------
 
 - Nothing changed yet.
