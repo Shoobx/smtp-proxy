@@ -84,7 +84,7 @@ class BaseHandler:
                         log.debug(f"Payload Sent!")
                         break
                     else:
-                        raise Exception(f"[{response.status_code}: {response.body}]")
+                        raise Exception(f"[{response.status_code}: {response.text}]")
                 except Exception as err:
                     retries += 1
                     errorMsg = f"Could not process your {className} message {mailArgs['subject']} to {mailArgs['rcpt_tos']}: {err}"
