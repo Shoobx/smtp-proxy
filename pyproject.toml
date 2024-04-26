@@ -1,6 +1,6 @@
 [project]
 name = "smtp-proxy"
-version = "0.1.2"
+version = "0.1.3.dev0"
 description = "SMTP server meant to redirect SMTP requests to a third-party email provider"
 readme = "README.md"
 requires-python = ">=3"
