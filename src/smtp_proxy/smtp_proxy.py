@@ -6,6 +6,7 @@ import asyncio
 import email.message
 import email.parser
 import signal
+import os
 
 from aiosmtpd.controller import Controller
 from aiosmtpd.smtp import Envelope
@@ -99,7 +100,8 @@ class BaseHandler:
 
 class SendgridHandler(BaseHandler):
     def getClient(self, **kwargs):
-        return SendgridAPI(kwargs["sendgrid_api_key"])
+        environKey = os.environ.get("SENDGRID_API_KEY")
+        return SendgridAPI(kwargs.get("sendgrid_api_key", environKey))
 
     def processPayload(self, mailArgs):
         sg_msg = Mail(

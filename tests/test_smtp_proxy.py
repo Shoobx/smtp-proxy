@@ -1,4 +1,5 @@
 import pytest
+import os
 from smtp_proxy.smtp_proxy import SmtpProxyServer, SendgridHandler
 
 from unittest import mock
@@ -10,6 +11,27 @@ def test_smtp_proxy_sendgrid_start():
     server = SmtpProxyServer(
         hostname="localtest", port=42, max_concurrent_requests=5, sendgrid_api_key="test"
     )
+
+    assert server.handler.client.api_key == "test"
+
+    # Don't keep the server alive, just initialize it
+    server.controller.start = mock.Mock()
+    server.handler.continueLoop = False
+
+    server.start()
+
+    # Server is initialized with the correct handler, client, and number of tasks
+    assert len(server.asyncTasks) == 5
+    assert isinstance(server.controller.handler, SendgridHandler)
+    assert isinstance(server.handler.client, SendgridAPI)
+
+def test_smtp_proxy_sendgrid_start_env_var():
+    os.environ['SENDGRID_API_KEY'] = "envTest"
+    server = SmtpProxyServer(
+        hostname="localtest", port=42, max_concurrent_requests=5
+    )
+
+    assert server.handler.client.api_key == "envTest"
 
     # Don't keep the server alive, just initialize it
     server.controller.start = mock.Mock()
