@@ -57,8 +57,9 @@ class BaseHandler:
     async def getMailFromQueue(self):
         log.debug("Waiting on Queue...")
         envelope = await self.queue.get()
-        log.debug("Received envelope")
+        log.debug(f"Received envelope: {vars(envelope)}")
         msg = email.parser.BytesParser(email.message.EmailMessage).parsebytes(envelope.content)
+        log.debug(f"Parsed Message: {vars(msg)}")
 
         return {
             "mail_from": envelope.mail_from,
@@ -104,12 +105,14 @@ class SendgridHandler(BaseHandler):
         return SendgridAPI(kwargs.get("sendgrid_api_key", environKey))
 
     def processPayload(self, mailArgs):
+        log.debug("Processing Payload for:" + str(mailArgs))
         sg_msg = Mail(
             from_email=mailArgs["mail_from"],
             to_emails=mailArgs["rcpt_tos"],
             subject=mailArgs["subject"],
             html_content=mailArgs["body"],
         )
+        log.debug("Payload proceessed as: " + str(sg_msg))
         return sg_msg
 
     async def sendMail(self, payload):

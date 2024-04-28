@@ -1,7 +1,7 @@
 0.1.3 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Better Debug  error logging
 
 
 0.1.2 (2024-04-26)
