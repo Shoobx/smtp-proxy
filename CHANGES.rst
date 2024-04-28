@@ -1,4 +1,4 @@
-0.1.3 (unreleased)
+0.1.3 (2024-04-28)
 ------------------
 
 - Better Debug  error logging
