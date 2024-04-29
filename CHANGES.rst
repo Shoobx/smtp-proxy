@@ -1,4 +1,4 @@
-0.1.4 (unreleased)
+0.1.4 (2024-04-28)
 ------------------
 
 - Handle text + html content
