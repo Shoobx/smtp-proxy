@@ -1,7 +1,7 @@
 0.1.6 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- More debugging
 
 
 0.1.5 (2024-04-28)

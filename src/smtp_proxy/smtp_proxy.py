@@ -110,6 +110,7 @@ class BaseHandler:
                     log.debug(err)
                     if retries == MAX_RETRIES:
                         log.error(f"Retry limit reached, giving up on {errorMsg}!")
+                        log.exception(err)
                     else:
                         log.warning(f"Retry attempt {retries}: {errorMsg}")
                         await asyncio.sleep(1 * retries)
@@ -122,8 +123,11 @@ class SendgridHandler(BaseHandler):
         environKey = os.environ.get("SENDGRID_API_KEY")
         apiKey = kwargs.get("sendgrid_api_key", environKey)
         log.debug(f"API Key: {apiKey}")
-        noProxy = os.environ.get("no_proxy") or os.environ.get("NO_PROXY")
-        log.debug(f"no_proxy= {noProxy}")
+
+        for var in [
+                'no_proxy', 'NO_PROXY', 'http_proxy',
+                'HTTP_PROXY', 'https_proxy', 'HTTPS_PROXY']:
+            log.debug(f"{var}: {os.environ.get(var)}")
         return SendgridAPI(apiKey)
 
     def processPayload(self, mailArgs):
