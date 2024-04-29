@@ -1,4 +1,4 @@
-0.1.9 (unreleased)
+0.1.9 (2024-04-29)
 ------------------
 
 - Support UTF-8 content
