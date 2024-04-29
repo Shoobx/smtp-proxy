@@ -1,5 +1,6 @@
 #!/user/bin/env python3
 
+import base64
 import click
 import logging
 import asyncio
@@ -12,7 +13,7 @@ from aiosmtpd.controller import Controller
 from aiosmtpd.smtp import Envelope
 from async_sendgrid import SendgridAPI
 from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Attachment, Mail
+from sendgrid.helpers.mail import Attachment, Header, Mail
 
 # from azure.identity import DeviceCodeCredential
 # from msgraph import GraphServiceClient
@@ -54,6 +55,11 @@ class BaseHandler:
         self.queue.put_nowait(envelope)
         return "250 OK"
 
+    def _cleanUTF8(self, utf8str):
+        utf8str = utf8str.replace('\r', '')
+        utf8str = utf8str.replace('\n', '')
+        return utf8str
+
     async def getMailFromQueue(self):
         log.debug("Waiting on Queue...")
         envelope = await self.queue.get()
@@ -65,6 +71,7 @@ class BaseHandler:
 
         plain_text_content = None
         html_content = None
+        char_set = 'us-ascii'
         attachments = []
 
         if isinstance(payload, str):
@@ -79,9 +86,7 @@ class BaseHandler:
                     messagesToProcess.extend(messagePayload)
                 elif (message.get_content_disposition() or '').lower() in ('attachment', 'inline'):
                     # Remove any added new line characters
-                    messagePayload = messagePayload.replace('\r', '')
-                    messagePayload = messagePayload.replace('\n', '')
-
+                    messagePayload = self._cleanUTF8(messagePayload)
                     attachments.append({
                         'file_content': messagePayload,
                         'file_name': message.get_filename(),
@@ -90,16 +95,25 @@ class BaseHandler:
                     })
                 elif message.get_content_type() == 'text/plain':
                     plain_text_content = messagePayload
+                    char_set = message.get_content_charset()
                 elif message.get_content_type() == 'text/html':
                     html_content = messagePayload
+                    char_set = message.get_content_charset()
 
+        if char_set.lower() == 'utf-8':
+            # Sendgrid will smartly handle the encoding automatically
+            # Decode the encoded utf-8 contents, restoring things to normal
+            plain_text_content = self._cleanUTF8(plain_text_content)
+            plain_text_content = base64.b64decode(plain_text_content).decode()
+            html_content = self._cleanUTF8(html_content)
+            html_content = base64.b64decode(html_content).decode()
         return {
             "mail_from": envelope.mail_from,
             "rcpt_tos": envelope.rcpt_tos,
             "subject": msg["Subject"],
             "plain_text_content": plain_text_content,
             "html_content": html_content,
-            "attachments": attachments
+            "attachments": attachments,
         }
 
     async def handleQueue(self):
@@ -160,6 +174,7 @@ class SendgridHandler(BaseHandler):
             sg_msg.add_attachment(Attachment(
                 **attachment,
             ))
+
         log.debug("Payload proceessed as: " + str(sg_msg))
         return sg_msg
 
