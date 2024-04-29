@@ -1,7 +1,7 @@
 0.1.8 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Support Attachments
 
 
 0.1.7 (2024-04-29)

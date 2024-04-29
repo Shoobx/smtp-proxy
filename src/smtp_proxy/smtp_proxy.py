@@ -12,7 +12,7 @@ from aiosmtpd.controller import Controller
 from aiosmtpd.smtp import Envelope
 from async_sendgrid import SendgridAPI
 from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail
+from sendgrid.helpers.mail import Attachment, Mail
 
 # from azure.identity import DeviceCodeCredential
 # from msgraph import GraphServiceClient
@@ -65,17 +65,33 @@ class BaseHandler:
 
         plain_text_content = None
         html_content = None
+        attachments = []
 
         if isinstance(payload, str):
             plain_text_content = payload
 
         if isinstance(payload, list):
-            payloads = payload[0].get_payload()
-            for payload in payloads:
-                if payload.get_content_type() == 'text/plain':
-                    plain_text_content = payload.get_payload()
-                elif payload.get_content_type() == 'text/html':
-                    html_content = payload.get_payload()
+            messagesToProcess = [*payload]
+            while messagesToProcess:
+                message = messagesToProcess.pop(0)
+                messagePayload = message.get_payload()
+                if isinstance(messagePayload, list):
+                    messagesToProcess.extend(messagePayload)
+                elif (message.get_content_disposition() or '').lower() in ('attachment', 'inline'):
+                    # Remove any added new line characters
+                    messagePayload = messagePayload.replace('\r', '')
+                    messagePayload = messagePayload.replace('\n', '')
+
+                    attachments.append({
+                        'file_content': messagePayload,
+                        'file_name': message.get_filename(),
+                        'file_type': message.get_content_type(),
+                        'disposition': message.get_content_disposition(),
+                    })
+                elif message.get_content_type() == 'text/plain':
+                    plain_text_content = messagePayload
+                elif message.get_content_type() == 'text/html':
+                    html_content = messagePayload
 
         return {
             "mail_from": envelope.mail_from,
@@ -83,6 +99,7 @@ class BaseHandler:
             "subject": msg["Subject"],
             "plain_text_content": plain_text_content,
             "html_content": html_content,
+            "attachments": attachments
         }
 
     async def handleQueue(self):
@@ -139,6 +156,10 @@ class SendgridHandler(BaseHandler):
             plain_text_content=mailArgs["plain_text_content"],
             html_content=mailArgs["html_content"],
         )
+        for attachment in mailArgs['attachments']:
+            sg_msg.add_attachment(Attachment(
+                **attachment,
+            ))
         log.debug("Payload proceessed as: " + str(sg_msg))
         return sg_msg
 
