@@ -61,11 +61,28 @@ class BaseHandler:
         msg = email.parser.BytesParser(email.message.EmailMessage).parsebytes(envelope.content)
         log.debug(f"Parsed Message: {vars(msg)}")
 
+        payload = msg.get_payload()
+
+        plain_text_content = None
+        html_content = None
+
+        if isinstance(payload, str):
+            plain_text_content = payload
+
+        if isinstance(payload, list):
+            payloads = payload[0].get_payload()
+            for payload in payloads:
+                if payload.get_content_type() == 'text/plain':
+                    plain_text_content = payload.get_payload()
+                elif payload.get_content_type() == 'text/html':
+                    html_content = payload.get_payload()
+
         return {
             "mail_from": envelope.mail_from,
             "rcpt_tos": envelope.rcpt_tos,
             "subject": msg["Subject"],
-            "body": msg.get_payload(),
+            "plain_text_content": plain_text_content,
+            "html_content": html_content,
         }
 
     async def handleQueue(self):
@@ -110,7 +127,8 @@ class SendgridHandler(BaseHandler):
             from_email=mailArgs["mail_from"],
             to_emails=mailArgs["rcpt_tos"],
             subject=mailArgs["subject"],
-            html_content=mailArgs["body"],
+            plain_text_content=mailArgs["plain_text_content"],
+            html_content=mailArgs["html_content"],
         )
         log.debug("Payload proceessed as: " + str(sg_msg))
         return sg_msg
