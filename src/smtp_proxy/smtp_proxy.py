@@ -118,8 +118,13 @@ class BaseHandler:
 
 class SendgridHandler(BaseHandler):
     def getClient(self, **kwargs):
+        log.debug(f"called getClient with {kwargs}")
         environKey = os.environ.get("SENDGRID_API_KEY")
-        return SendgridAPI(kwargs.get("sendgrid_api_key", environKey))
+        apiKey = kwargs.get("sendgrid_api_key", environKey)
+        log.debug(f"API Key: {apiKey}")
+        noProxy = os.environ.get("no_proxy") or os.environ.get("NO_PROXY")
+        log.debug(f"no_proxy= {noProxy}")
+        return SendgridAPI(apiKey)
 
     def processPayload(self, mailArgs):
         log.debug("Processing Payload for:" + str(mailArgs))
