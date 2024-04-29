@@ -1,4 +1,4 @@
-0.1.8 (unreleased)
+0.1.8 (2024-04-29)
 ------------------
 
 - Support Attachments
