@@ -121,7 +121,7 @@ class SendgridHandler(BaseHandler):
     def getClient(self, **kwargs):
         log.debug(f"called getClient with {kwargs}")
         environKey = os.environ.get("SENDGRID_API_KEY")
-        apiKey = kwargs.get("sendgrid_api_key", environKey)
+        apiKey = kwargs.get("sendgrid_api_key") or environKey
         log.debug(f"API Key: {apiKey}")
 
         for var in [
